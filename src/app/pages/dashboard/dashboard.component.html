@@ -1,0 +1,89 @@
+<div class="row">
+    <div class="col-12 text-end">
+        <button type="button" class="btn btn-secondary me-2 rounded-pill" (click)="toggleView('past')"
+            [disabled]="view === 'past'">
+            Past Launches
+        </button>
+        <button type="button" class="btn btn-success rounded-pill" (click)="toggleView('upcoming')"
+            [disabled]="view === 'upcoming'">
+            Upcoming Launches
+        </button>
+    </div>
+</div>
+
+<div class="container my-4">
+    <form [formGroup]="filterForm" *ngIf="view==='past'" class="mb-3 row g-2 align-items-center">
+        <div class="col-auto">
+            <input formControlName="year" class="form-control" placeholder="Year e.g. 2020">
+        </div>
+        <div class="col-auto">
+            <select formControlName="status" class="form-select">
+                <option value="all">All</option>
+                <option value="success">Success</option>
+                <option value="failure">Failure</option>
+            </select>
+        </div>
+        
+        <div class="col-auto">
+            <button type="button" class="btn btn-outline-info btn-sm" (click)="changeSort('date')">
+                Sort by Date
+                <i *ngIf="sortKey === 'date' && sortAsc" class="bi bi-arrow-up"></i>
+                <i *ngIf="sortKey === 'date' && !sortAsc" class="bi bi-arrow-down"></i>
+            </button>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-outline-info btn-sm" (click)="changeSort('name')">
+                Sort by Name
+                <i *ngIf="sortKey === 'name' && sortAsc" class="bi bi-arrow-up"></i>
+                <i *ngIf="sortKey === 'name' && !sortAsc" class="bi bi-arrow-down"></i>
+            </button>
+        </div>
+    </form>
+
+    <div *ngIf="loading" class="alert alert-info">Loading…</div>
+    <div *ngIf="error" class="alert alert-danger">
+        {{error}} <button class="btn btn-sm btn-light" (click)="retry()">Try again</button>
+    </div>
+
+    <div *ngIf="!loading && displayed.length === 0" class="alert alert-warning">No launches found.</div>
+
+
+
+<div class="d-flex">
+    <div class="p-2 border-end" style="min-width: 200px;">
+        <h5>Columns</h5>
+        <div *ngFor="let col of columnDefs">
+            <ng-container *ngIf="col.field">
+                <input type="checkbox" [id]="col.field" [checked]="!hiddenColumns.includes(col.field)"
+                    (change)="toggleColumn(col.field!, $event)" />
+                <label [for]="col.field">{{ col.headerName }}</label>
+            </ng-container>
+        </div>
+    </div>
+
+<div class="flex-grow-1">
+    <ag-grid-angular style="width: 100%; height: 500px;" class="ag-theme-alpine" [rowData]="displayed"
+        [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [rowHeight]="35" rowSelection="single"
+        (gridReady)="onGridReady($event)">
+    </ag-grid-angular>
+</div>
+    
+</div>
+
+
+
+
+    <nav *ngIf="view==='past' && !loading" class="my-3">
+        <ul class="pagination">
+            <li class="page-item" [class.disabled]="currentPage===1">
+                <button class="page-link" (click)="goPage(currentPage-1)">Previous</button>
+            </li>
+            <li class="page-item active">
+                <span class="page-link">{{currentPage}}</span>
+            </li>
+            <li class="page-item" [class.disabled]="displayed.length < pageSize">
+                <button class="page-link" (click)="goPage(currentPage+1)">Next</button>
+            </li>
+        </ul>
+    </nav>
+</div>

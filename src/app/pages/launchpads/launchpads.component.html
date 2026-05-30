@@ -1,0 +1,45 @@
+<h2 class="my-4"> Launchpads</h2>
+
+<div *ngIf="loading" class="text-center my-4">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading launchpads...</p>
+</div>
+
+<div *ngIf="error" class="alert alert-danger text-center">
+    {{ error }}
+</div>
+<div *ngIf="!loading && launchpads.length" class="table-responsive">
+    <table class="table table-bordered table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Region</th>
+                <th>Locality</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let pad of launchpads">
+                <td>{{ pad.name }}</td>
+                <td>{{ pad.region }}</td>
+                <td>{{ pad.locality }}</td>
+                <td>
+                    <span [ngClass]="{
+              'text-success': pad.status === 'active',
+              'text-danger': pad.status === 'retired',
+              'text-warning': pad.status === 'inactive'
+            }">
+                        {{ pad.status | titlecase }}
+                    </span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+<div *ngIf="!loading && !launchpads.length" class="text-muted text-center mt-3">
+    No launchpads found.
+</div>

@@ -1,0 +1,9 @@
+.view-details-btn {
+    background: linear-gradient(135deg, #007bff, #00c6ff);
+    border: none;
+    transition: background 0.3s ease;
+}
+.view-details-btn:hover {
+    background: linear-gradient(135deg, #0056b3, #00aaff);
+    text-decoration: none;
+}
