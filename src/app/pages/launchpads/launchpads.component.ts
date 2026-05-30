@@ -5,9 +5,10 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-launchpads',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './launchpads.component.html',
-  styleUrl: './launchpads.component.css',
+  styleUrls: ['./launchpads.component.css'],
 })
 export class LaunchpadsComponent {
   launchpads: Launchpad[] = [];

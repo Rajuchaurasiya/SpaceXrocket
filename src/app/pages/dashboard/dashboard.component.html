@@ -1,89 +1,217 @@
-<div class="row">
-    <div class="col-12 text-end">
-        <button type="button" class="btn btn-secondary me-2 rounded-pill" (click)="toggleView('past')"
-            [disabled]="view === 'past'">
-            Past Launches
-        </button>
-        <button type="button" class="btn btn-success rounded-pill" (click)="toggleView('upcoming')"
-            [disabled]="view === 'upcoming'">
-            Upcoming Launches
-        </button>
+<div class="dashboard-page container-fluid py-4">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-4">
+    <div>
+      <h1 class="mb-1">Launch Dashboard</h1>
+      <p class="text-muted mb-0">Monitor SpaceX launch performance, use filters, and inspect rocket usage.</p>
     </div>
-</div>
+    <div class="btn-group" role="group" aria-label="View toggle">
+      <button
+        type="button"
+        class="btn btn-outline-secondary rounded-pill"
+        (click)="toggleView('past')"
+        [class.active]="view === 'past'"
+      >
+        Past launches
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-success rounded-pill"
+        (click)="toggleView('upcoming')"
+        [class.active]="view === 'upcoming'"
+      >
+        Upcoming launches
+      </button>
+    </div>
+  </div>
 
-<div class="container my-4">
-    <form [formGroup]="filterForm" *ngIf="view==='past'" class="mb-3 row g-2 align-items-center">
-        <div class="col-auto">
-            <input formControlName="year" class="form-control" placeholder="Year e.g. 2020">
+  <div class="row gx-3 gy-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+      <div class="card dashboard-card shadow-sm h-100">
+        <div class="card-body">
+          <p class="text-uppercase text-muted small mb-2">Total Loaded</p>
+          <h2 class="dashboard-value mb-1">{{ launches.length }}</h2>
+          <p class="mb-0 text-muted">{{ view === 'past' ? 'Past launch records' : 'Upcoming launch items' }}</p>
         </div>
-        <div class="col-auto">
-            <select formControlName="status" class="form-select">
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card dashboard-card shadow-sm h-100">
+        <div class="card-body">
+          <p class="text-uppercase text-muted small mb-2">Filtered Results</p>
+          <h2 class="dashboard-value mb-1">{{ filteredLaunches.length }}</h2>
+          <p class="mb-0 text-muted">Showing {{ pageStart }} - {{ pageEnd }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card dashboard-card shadow-sm h-100">
+        <div class="card-body">
+          <p class="text-uppercase text-muted small mb-2">Success Rate</p>
+          <h2 class="dashboard-value mb-1">{{ successRate }}%</h2>
+          <p class="mb-0 text-muted">Based on executed launches</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card dashboard-card shadow-sm h-100">
+        <div class="card-body">
+          <p class="text-uppercase text-muted small mb-2">Top Rocket</p>
+          <h2 class="dashboard-value mb-1">{{ topRockets[0]?.name || 'N/A' }}</h2>
+          <p class="mb-0 text-muted">{{ topRockets[0]?.count || 0 }} launches</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row gx-3 gy-3 mb-4">
+    <div class="col-lg-7">
+      <div class="card dashboard-card shadow-sm h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">Launches by year</h5>
+          <span class="badge bg-secondary">{{ yearlyLaunches.length }}</span>
+        </div>
+        <div class="card-body chart-card-body">
+          <ng-container *ngIf="yearlyLaunches.length; else noYearData">
+            <div class="chart-list">
+              <div *ngFor="let item of yearlyLaunches" class="chart-row">
+                <div class="chart-meta">
+                  <span class="chart-label">{{ item.year }}</span>
+                  <span class="chart-value">{{ item.count }}</span>
+                </div>
+                <div class="chart-track">
+                  <div
+                    class="chart-fill"
+                    [style.width.%]="(item.count / yearMaxCount) * 100"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+          <ng-template #noYearData>
+            <p class="text-muted mb-0">No year data available yet.</p>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card dashboard-card shadow-sm h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">Top rockets</h5>
+          <span class="badge bg-secondary">{{ topRockets.length }}</span>
+        </div>
+        <div class="card-body chart-card-body">
+          <ng-container *ngIf="topRockets.length; else noRocketData">
+            <div class="chart-list">
+              <div *ngFor="let rocket of topRockets" class="chart-row">
+                <div class="chart-meta">
+                  <span class="chart-label text-truncate">{{ rocket.name }}</span>
+                  <span class="chart-value">{{ rocket.count }}</span>
+                </div>
+                <div class="chart-track">
+                  <div
+                    class="chart-fill chart-fill-alt"
+                    [style.width.%]="(rocket.count / rocketMaxCount) * 100"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+          <ng-template #noRocketData>
+            <p class="text-muted mb-0">Rocket usage is unavailable until launches load.</p>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row gx-3 gy-3 mb-4">
+    <div class="col-lg-4">
+      <div class="card dashboard-card shadow-sm h-100">
+        <div class="card-header">
+          <h5 class="mb-0">Filters</h5>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="filterForm" class="row g-2">
+            <div class="col-12">
+              <label class="form-label">Year</label>
+              <input formControlName="year" class="form-control" placeholder="2020" />
+            </div>
+            <div class="col-12" *ngIf="view === 'past'">
+              <label class="form-label">Outcome</label>
+              <select formControlName="status" class="form-select">
                 <option value="all">All</option>
                 <option value="success">Success</option>
                 <option value="failure">Failure</option>
-            </select>
-        </div>
-        
-        <div class="col-auto">
-            <button type="button" class="btn btn-outline-info btn-sm" (click)="changeSort('date')">
+              </select>
+            </div>
+            <div class="col-12 d-flex gap-2 flex-wrap">
+              <button type="button" class="btn btn-outline-primary btn-sm flex-fill" (click)="changeSort('date')">
                 Sort by Date
                 <i *ngIf="sortKey === 'date' && sortAsc" class="bi bi-arrow-up"></i>
                 <i *ngIf="sortKey === 'date' && !sortAsc" class="bi bi-arrow-down"></i>
-            </button>
-        </div>
-        <div class="col-auto">
-            <button type="button" class="btn btn-outline-info btn-sm" (click)="changeSort('name')">
+              </button>
+              <button type="button" class="btn btn-outline-primary btn-sm flex-fill" (click)="changeSort('name')">
                 Sort by Name
                 <i *ngIf="sortKey === 'name' && sortAsc" class="bi bi-arrow-up"></i>
                 <i *ngIf="sortKey === 'name' && !sortAsc" class="bi bi-arrow-down"></i>
-            </button>
+              </button>
+            </div>
+            <div class="col-12">
+              <button type="button" class="btn btn-secondary btn-sm w-100" (click)="showAllColumns()">
+                Reset view
+              </button>
+            </div>
+          </form>
         </div>
-    </form>
-
-    <div *ngIf="loading" class="alert alert-info">Loading…</div>
-    <div *ngIf="error" class="alert alert-danger">
-        {{error}} <button class="btn btn-sm btn-light" (click)="retry()">Try again</button>
+      </div>
     </div>
-
-    <div *ngIf="!loading && displayed.length === 0" class="alert alert-warning">No launches found.</div>
-
-
-
-<div class="d-flex">
-    <div class="p-2 border-end" style="min-width: 200px;">
-        <h5>Columns</h5>
-        <div *ngFor="let col of columnDefs">
-            <ng-container *ngIf="col.field">
-                <input type="checkbox" [id]="col.field" [checked]="!hiddenColumns.includes(col.field)"
-                    (change)="toggleColumn(col.field!, $event)" />
-                <label [for]="col.field">{{ col.headerName }}</label>
-            </ng-container>
+    <div class="col-lg-8">
+      <div class="card dashboard-card shadow-sm h-100">
+        <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+          <div>
+            <h5 class="card-title mb-1">Launch table</h5>
+            <p class="text-muted mb-0">Customize columns and inspect individual launch details.</p>
+          </div>
+          <div class="small text-muted">Page {{ currentPage }} / {{ totalPages }}</div>
         </div>
+        <div class="card-body">
+          <div *ngIf="loading" class="alert alert-info mb-3">Loading…</div>
+          <div *ngIf="error" class="alert alert-danger mb-3">
+            {{ error }}
+            <button class="btn btn-sm btn-light ms-2" (click)="retry()">Try again</button>
+          </div>
+          <div *ngIf="!loading && displayed.length === 0" class="alert alert-warning mb-3">No launches found.</div>
+          <div class="table-wrapper">
+            <ag-grid-angular
+              style="width: 100%; height: 480px;"
+              class="ag-theme-alpine"
+              [rowData]="displayed"
+              [columnDefs]="columnDefs"
+              [defaultColDef]="defaultColDef"
+              [rowHeight]="35"
+              rowSelection="single"
+              (gridReady)="onGridReady($event)"
+            ></ag-grid-angular>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 
-<div class="flex-grow-1">
-    <ag-grid-angular style="width: 100%; height: 500px;" class="ag-theme-alpine" [rowData]="displayed"
-        [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [rowHeight]="35" rowSelection="single"
-        (gridReady)="onGridReady($event)">
-    </ag-grid-angular>
-</div>
-    
-</div>
-
-
-
-
-    <nav *ngIf="view==='past' && !loading" class="my-3">
-        <ul class="pagination">
-            <li class="page-item" [class.disabled]="currentPage===1">
-                <button class="page-link" (click)="goPage(currentPage-1)">Previous</button>
-            </li>
-            <li class="page-item active">
-                <span class="page-link">{{currentPage}}</span>
-            </li>
-            <li class="page-item" [class.disabled]="displayed.length < pageSize">
-                <button class="page-link" (click)="goPage(currentPage+1)">Next</button>
-            </li>
-        </ul>
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mb-4">
+    <div class="text-muted">Showing {{ pageStart }} - {{ pageEnd }} of {{ filteredLaunches.length }} records</div>
+    <nav aria-label="Page navigation">
+      <ul class="pagination mb-0">
+        <li class="page-item" [class.disabled]="currentPage === 1">
+          <button class="page-link" (click)="goPage(currentPage - 1)">Previous</button>
+        </li>
+        <li class="page-item active">
+          <span class="page-link">{{ currentPage }}</span>
+        </li>
+        <li class="page-item" [class.disabled]="currentPage === totalPages">
+          <button class="page-link" (click)="goPage(currentPage + 1)">Next</button>
+        </li>
+      </ul>
     </nav>
+  </div>
 </div>

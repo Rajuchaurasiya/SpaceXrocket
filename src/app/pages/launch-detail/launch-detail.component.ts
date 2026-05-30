@@ -7,9 +7,10 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-launch-detail',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './launch-detail.component.html',
-  styleUrl: './launch-detail.component.css',
+  styleUrls: ['./launch-detail.component.css'],
 })
 export class LaunchDetailComponent {
   launch!: Launch;
