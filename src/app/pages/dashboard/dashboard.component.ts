@@ -21,23 +21,26 @@ import {
 
 @Component({
   selector: 'app-dashboard',
+  standalone: true,
   imports: [CommonModule, ReactiveFormsModule, AgGridModule],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css',
+  styleUrls: ['./dashboard.component.css'],
 })
 export class DashboardComponent {
   gridApi!: GridApi;
   launches: Launch[] = [];
   rockets = new Map<string, Rocket>();
+  filteredLaunches: Launch[] = [];
   displayed: Launch[] = [];
   hiddenColumns: string[] = [];
+  yearlyLaunches: { year: number; count: number }[] = [];
+  rocketUsage: { name: string; count: number }[] = [];
 
   view: 'past' | 'upcoming' = 'past';
   sortKey: 'date' | 'name' = 'date';
   sortAsc = true;
   pageSize = 12;
   currentPage = 1;
-  totalCount = 0;
 
   filterForm = new FormGroup({
     year: new FormControl(''),
@@ -132,14 +135,28 @@ export class DashboardComponent {
   toggleView(v: 'past' | 'upcoming') {
     this.view = v;
     this.currentPage = 1;
+    this.filterForm.patchValue({ year: '', status: 'all' }, { emitEvent: false });
     this.loadLaunches();
   }
 
   loadLaunches() {
-    this.api.getPast(100, 0).subscribe((data) => {
-      this.launches = data;
-      this.displayed = data;
-      this.loadRockets();
+    this.loading = true;
+    this.error = '';
+    const loader = this.view === 'past' ? this.api.getPast(200, 0) : this.api.getUpcoming();
+
+    loader.subscribe({
+      next: (data) => {
+        this.launches = data;
+        this.filteredLaunches = [...data];
+        this.currentPage = 1;
+        this.loadRockets();
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (err) => {
+        this.loading = false;
+        this.error = err.message || 'Unable to load launches';
+      },
     });
   }
 
@@ -152,6 +169,7 @@ export class DashboardComponent {
       forkJoin(ids.map((id) => this.api.getRocket(id))).subscribe({
         next: (rockets) => {
           rockets.forEach((r) => this.rockets.set(r.id, r));
+          this.applyFilters();
         },
       });
     }
@@ -167,7 +185,7 @@ export class DashboardComponent {
       );
     }
 
-    if (status !== 'all') {
+    if (status !== 'all' && this.view === 'past') {
       filtered = filtered.filter((l) => {
         if (status === 'success') return l.success === true;
         if (status === 'failure') return l.success === false;
@@ -182,9 +200,72 @@ export class DashboardComponent {
       return this.sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     });
 
+    this.filteredLaunches = filtered;
+    this.currentPage = Math.min(this.currentPage, this.totalPages);
     const start = (this.currentPage - 1) * this.pageSize;
     const end = start + this.pageSize;
     this.displayed = filtered.slice(start, end);
+    this.updateCharts();
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredLaunches.length / this.pageSize));
+  }
+
+  get pageStart(): number {
+    return this.filteredLaunches.length ? (this.currentPage - 1) * this.pageSize + 1 : 0;
+  }
+
+  get pageEnd(): number {
+    return Math.min(this.currentPage * this.pageSize, this.filteredLaunches.length);
+  }
+
+  get pastLaunchCount(): number {
+    return this.launches.filter((l) => !l.upcoming).length;
+  }
+
+  get upcomingLaunchCount(): number {
+    return this.launches.filter((l) => l.upcoming).length;
+  }
+
+  get successRate(): number {
+    if (!this.launches.length) return 0;
+    const executed = this.launches.filter((l) => l.success !== null);
+    if (!executed.length) return 0;
+    const success = executed.filter((l) => l.success).length;
+    return Math.round((success / executed.length) * 100);
+  }
+
+  get topRockets(): { name: string; count: number }[] {
+    return this.rocketUsage.slice(0, 5);
+  }
+
+  updateCharts() {
+    const yearCounts = new Map<number, number>();
+    const rocketCounts = new Map<string, number>();
+
+    this.filteredLaunches.forEach((launch) => {
+      const year = new Date(launch.date_utc).getFullYear();
+      yearCounts.set(year, (yearCounts.get(year) || 0) + 1);
+      const rocketName = this.rockets.get(launch.rocket)?.name || 'Unknown';
+      rocketCounts.set(rocketName, (rocketCounts.get(rocketName) || 0) + 1);
+    });
+
+    this.yearlyLaunches = Array.from(yearCounts.entries())
+      .map(([year, count]) => ({ year, count }))
+      .sort((a, b) => a.year - b.year);
+
+    this.rocketUsage = Array.from(rocketCounts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }
+
+  get yearMaxCount(): number {
+    return this.yearlyLaunches.reduce((max, item) => Math.max(max, item.count), 1);
+  }
+
+  get rocketMaxCount(): number {
+    return this.rocketUsage.reduce((max, item) => Math.max(max, item.count), 1);
   }
 
   loading: boolean = false;
@@ -202,8 +283,8 @@ export class DashboardComponent {
     this.loadLaunches();
   }
   goPage(n: number) {
-    if (n < 1) return;
+    if (n < 1 || n > this.totalPages) return;
     this.currentPage = n;
-    this.loadLaunches();
+    this.applyFilters();
   }
 }

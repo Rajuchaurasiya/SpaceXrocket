@@ -7,9 +7,10 @@ import { AgGridModule } from 'ag-grid-angular';
 
 @Component({
   selector: 'app-rockets',
+  standalone: true,
   imports: [CommonModule, AgGridModule],
   templateUrl: './rockets.component.html',
-  styleUrl: './rockets.component.css',
+  styleUrls: ['./rockets.component.css'],
 })
 export class RocketsComponent implements OnInit {
   //   rockets: Rocket[] = [];

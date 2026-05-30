@@ -7,9 +7,10 @@ import { AllCommunityModule, ColDef, ModuleRegistry } from 'ag-grid-community';
 
 @Component({
   selector: 'app-payloads',
+  standalone: true,
   imports: [CommonModule, AgGridModule],
   templateUrl: './payloads.component.html',
-  styleUrl: './payloads.component.css',
+  styleUrls: ['./payloads.component.css'],
 })
 export class PayloadsComponent implements OnInit {
   // payloads: Payload[] = [];
